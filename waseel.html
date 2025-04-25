@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>واصِل - الصفحة الرئيسية</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 20px;
+    }
+    .container {
+      margin-top: 30px;
+    }
+    .search-container {
+      margin-bottom: 30px;
+    }
+    .search-container input {
+      padding: 10px;
+      font-size: 16px;
+      width: 300px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      width: 250px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .card img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .card h3 {
+      margin-top: 10px;
+    }
+    .card p {
+      font-size: 14px;
+      color: #555;
+    }
+    .btn-card {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .filters {
+      margin-top: 20px;
+    }
+    .filters select {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+
+    /* نافذة التفاصيل */
+    #detailsModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    #detailsModal .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 500px;
+      text-align: right;
+      position: relative;
+    }
+    #detailsModal .modal-content button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #007bff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>مرحبًا في واصل</h1>
+    <p>ابحث عن المتقاعدين، جهات العمل، أو الأفراد حسب التخصص أو المجال</p>
+  </header>
+
+  <div class="container">
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="ابحث عن تخصص مثل محاسبة..." onkeyup="filterCards()">
+    </div>
+
+    <div class="buttons">
+      <button class="btn" onclick="showContent('experts')">ذو خبرة</button>
+      <button class="btn" onclick="showContent('companies')">جهة عمل</button>
+      <button class="btn" onclick="showContent('individuals')">فرد</button>
+    </div>
+
+    <div class="filters" id="filters" style="display:none;">
+      <select id="field" onchange="filterCards()">
+        <option value="all">اختر المجال</option>
+        <option value="تكنولوجيا">تكنولوجيا</option>
+        <option value="تسويق">تسويق</option>
+        <option value="محاسبة">محاسبة</option>
+      </select>
+      <select id="city" onchange="filterCards()">
+        <option value="all">اختر المدينة</option>
+        <option value="جدة">جدة</option>
+        <option value="الرياض">الرياض</option>
+      </select>
+      <select id="type" onchange="filterCards()">
+        <option value="all">اختر النوع</option>
+        <option value="استشارة قانونية">استشارة قانونية</option>
+        <option value="استشارة مالية">استشارة مالية</option>
+      </select>
+    </div>
+
+    <div class="card-container" id="cards-container"></div>
+  </div>
+
+  <div id="detailsModal">
+    <div class="modal-content">
+      <button onclick="closeModal()">×</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    const expertsData = [
+      { name: "أحمد محمد", img: "https://via.placeholder.com/100", field: "تكنولوجيا", age: 45, experience: 20, skill: "تطوير البرمجيات", projects: "مشروع نظام موارد بشرية" },
+      { name: "سارة خالد", img: "https://via.placeholder.com/100", field: "محاسبة", age: 50, experience: 25, skill: "إدارة الميزانيات", projects: "تطوير نظام محاسبة لشركة كبرى" },
+    ];
+
+    const companiesData = [
+      { name: "شركة الاتصالات", img: "https://via.placeholder.com/100", field: "تكنولوجيا", city: "جدة", job: "مطور ويب", description: "نبحث عن مطور متمكن بلغة JavaScript" },
+      { name: "شركة التسويق", img: "https://via.placeholder.com/100", field: "تسويق", city: "الرياض", job: "أخصائي تسويق", description: "خبرة في إدارة الحملات الإعلانية" },
+    ];
+
+    const individualsData = [
+      { name: "فاطمة علي", img: "https://via.placeholder.com/100", consultation: "استشارة قانونية", description: "استشارة قانونية بخصوص قوانين العمل", company: "مكتب المحاماة" },
+      { name: "محمود سعيد", img: "https://via.placeholder.com/100", consultation: "استشارة مالية", description: "كيفية تنظيم الميزانية الشهرية", company: "بنك الرياض" },
+    ];
+
+    function showContent(type) {
+      document.getElementById("filters").style.display = "block";
+      let container = document.getElementById("cards-container");
+      container.innerHTML = '';
+
+      if (type === 'experts') {
+        displayCards(expertsData, container, 'expert');
+      } else if (type === 'companies') {
+        displayCards(companiesData, container, 'company');
+      } else if (type === 'individuals') {
+        displayCards(individualsData, container, 'individual');
+      }
+    }
+
+    function displayCards(data, container, type) {
+      data.forEach(item => {
+        let card = `<div class="card" onclick='viewDetails("${type}", ${JSON.stringify(item)})'>
+                      <img src="${item.img}" alt="${item.name}">
+                      <h3>${item.name}</h3>
+                      <p>${item.field || item.consultation}</p>
+                      <button class="btn-card">عرض التفاصيل</button>
+                    </div>`;
+        container.innerHTML += card;
+      });
+    }
+
+    function viewDetails(type, item) {
+      let content = '';
+      if (type === 'expert') {
+        content = `
+          <h2>${item.name}</h2>
+          <p><strong>التخصص:</strong> ${item.field}</p>
+          <p><strong>العمر:</strong> ${item.age} سنة</p>
+          <p><strong>الخبرة:</strong> ${item.experience} سنة</p>
+          <p><strong>أهم مهارة:</strong> ${item.skill}</p>
+          <p><strong>أحدث المشاريع:</strong> ${item.projects}</p>
+          <p><strong>رقم التواصل:</strong> 0552401106</p>
+          <p><strong>الإيميل:</strong> expert@example.com</p>
+        `;
+      } else if (type === 'company') {
+        content = `
+          <h2>${item.name}</h2>
+          <p><strong>المجال:</strong> ${item.field}</p>
+          <p><strong>المدينة:</strong> ${item.city}</p>
+          <p><strong>الوظائف المطلوبة:</strong> ${item.job}</p>
+          <p><strong>الوصف:</strong> ${item.description}</p>
+          <p><strong>رقم التواصل:</strong> 0524724585</p>
+          <p><strong>الإيميل:</strong> hr@company.com</p>
+        `;
+      } else if (type === 'individual') {
+        content = `
+          <h2>${item.name}</h2>
+          <p><strong>نوع الاستشارة:</strong> ${item.consultation}</p>
+          <p><strong>الوصف:</strong> ${item.description}</p>
+          <p><strong>الجهة:</strong> ${item.company}</p>
+          <p><strong>رقم التواصل:</strong> 0504365261</p>
+          <p><strong>الإيميل:</strong> support@advice.com</p>
+        `;
+      }
+      document.getElementById("modalContent").innerHTML = content;
+      document.getElementById("detailsModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("detailsModal").style.display = "none";
+    }
+
+    function filterCards() {
+      let query = document.getElementById("searchInput").value.toLowerCase();
+      let field = document.getElementById("field").value;
+      let city = document.getElementById("city").value;
+      let type = document.getElementById("type").value;
+      let container = document.getElementById("cards-container");
+      container.innerHTML = '';
+
+      const filteredExperts = expertsData.filter(expert =>
+        (expert.field.toLowerCase().includes(query) || query === '') &&
+        (field === 'all' || expert.field === field)
+      );
+      const filteredCompanies = companiesData.filter(company =>
+        (company.field.toLowerCase().includes(query) || query === '') &&
+        (field === 'all' || company.field === field) &&
+        (city === 'all' || company.city === city)
+      );
+      const filteredIndividuals = individualsData.filter(ind =>
+        (ind.consultation.toLowerCase().includes(query) || query === '') &&
+        (type === 'all' || ind.consultation === type)
+      );
+
+      displayCards(filteredExperts, container, 'expert');
+      displayCards(filteredCompanies, container, 'company');
+      displayCards(filteredIndividuals, container, 'individual');
+    }
+  </script>
+</body>
+</html>
